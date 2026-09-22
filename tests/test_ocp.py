@@ -221,7 +221,7 @@ def test_material_data_uses_typed_handles():
     document = TDocStd_Document(TCollection_ExtendedString("XmlXCAF"))
     shape_tool = XCAFDoc_DocumentTool.ShapeTool_s(document.Main())
     material_tool = XCAFDoc_DocumentTool.MaterialTool_s(document.Main())
-    label = shape_tool.AddShape_s(BRepPrimAPI_MakeBox(1, 1, 1).Shape(), False)
+    label = shape_tool.AddShape(BRepPrimAPI_MakeBox(1, 1, 1).Shape(), False)
     material_tool.SetMaterial(
         label,
         TCollection_HAsciiString("Steel"),
@@ -237,7 +237,8 @@ def test_material_data_uses_typed_handles():
         7850.0,
         "kg/m^3",
     )
-    assert XCAFDoc_DocumentTool.GetMaterialData_s(shape_tool.NewShape_s()) is None
+    unassigned_label = shape_tool.AddShape(BRepPrimAPI_MakeBox(2, 2, 2).Shape(), False)
+    assert XCAFDoc_DocumentTool.GetMaterialData_s(unassigned_label) is None
 
 
 # %% gp
