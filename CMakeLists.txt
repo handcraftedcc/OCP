@@ -78,22 +78,32 @@ elseif(NOT PLATFORM STREQUAL "Windows")
     list(APPEND CXX_INCLUDES -i ${inc}/)
   endforeach()
 
-# X-generation from Linux to Windows
+# Native Windows already has the MSVC and Windows SDK include paths configured
+# by CMake.  Only the cross-generation case needs the legacy msvc-wine SDK
+# downloader.  Running that downloader on GitHub's Windows runner can fail
+# while unpacking optional SDK components and leaves the generator without any
+# C++ include directory.
 else()
-  # download part of msvc 16 and winsdk
-  if(NOT EXISTS ${CMAKE_BINARY_DIR}/msvc)
-    execute_process(
-      COMMAND
-        ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/extern/msvc-wine/vsdownload.py
-        --major ${MSVC_VER} --accept-license --dest msvc Win10SDK_10.0.19041
-        Microsoft.VisualCpp.CRT.Headers
-      WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-  endif()
+  if(MSVC)
+    foreach(inc IN LISTS CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
+      list(APPEND CXX_INCLUDES -i ${inc}/)
+    endforeach()
+  else()
+    # download part of msvc 16 and winsdk for cross-generation
+    if(NOT EXISTS ${CMAKE_BINARY_DIR}/msvc)
+      execute_process(
+        COMMAND
+          ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/extern/msvc-wine/vsdownload.py
+          --major ${MSVC_VER} --accept-license --dest msvc Win10SDK_10.0.19041
+          Microsoft.VisualCpp.CRT.Headers
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    endif()
 
-  list(APPEND CXX_INCLUDES -i
-       ${CMAKE_BINARY_DIR}/msvc/VC/Tools/MSVC/14.29.30133/include)
-  list(APPEND CXX_INCLUDES -i
-       ${CMAKE_BINARY_DIR}/msvc/Windows\ Kits/10/Include/10.0.19041.0/ucrt/)
+    list(APPEND CXX_INCLUDES -i
+         ${CMAKE_BINARY_DIR}/msvc/VC/Tools/MSVC/14.29.30133/include)
+    list(APPEND CXX_INCLUDES -i
+         ${CMAKE_BINARY_DIR}/msvc/Windows\ Kits/10/Include/10.0.19041.0/ucrt/)
+  endif()
   list(APPEND CXX_INCLUDES -i ${CMAKE_SOURCE_DIR}/extern/include/)
 endif()
 
