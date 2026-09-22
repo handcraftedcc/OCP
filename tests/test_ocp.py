@@ -210,6 +210,36 @@ def test_attributes():
     assert pbr.Metallic == 0.0
 
 
+# %% XCAF material metadata
+
+def test_material_data_uses_typed_handles():
+    """Material lookup must not use the unsafe generic FindAttribute shim."""
+    from OCP.TCollection import TCollection_ExtendedString, TCollection_HAsciiString
+    from OCP.TDocStd import TDocStd_Document
+    from OCP.XCAFDoc import XCAFDoc_DocumentTool
+
+    document = TDocStd_Document(TCollection_ExtendedString("XmlXCAF"))
+    shape_tool = XCAFDoc_DocumentTool.ShapeTool_s(document.Main())
+    material_tool = XCAFDoc_DocumentTool.MaterialTool_s(document.Main())
+    label = shape_tool.AddShape_s(BRepPrimAPI_MakeBox(1, 1, 1).Shape(), False)
+    material_tool.SetMaterial(
+        label,
+        TCollection_HAsciiString("Steel"),
+        TCollection_HAsciiString("Alloy steel"),
+        7850.0,
+        TCollection_HAsciiString("Mass density"),
+        TCollection_HAsciiString("kg/m^3"),
+    )
+
+    assert XCAFDoc_DocumentTool.GetMaterialData_s(label) == (
+        "Steel",
+        "Alloy steel",
+        7850.0,
+        "kg/m^3",
+    )
+    assert XCAFDoc_DocumentTool.GetMaterialData_s(shape_tool.NewShape_s()) is None
+
+
 # %% gp
 
 from OCP.gp import gp_Vec, gp_Dir, gp_Pnt

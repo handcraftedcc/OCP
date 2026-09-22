@@ -2489,6 +2489,16 @@ using rapidjson::BasicOStreamWrapper;"""
 
     [Modules.XCAFDoc]
 
+        # `TDF_Label::FindAttribute` takes a generic `TDF_Attribute` handle.
+        # The generated Python shim copies the result through `Restore`, which
+        # loses the concrete XCAFDoc_Material handle and can leave Python with
+        # invalid material data.  Resolve both typed handles in C++ instead.
+        [Modules.XCAFDoc.Classes.XCAFDoc_DocumentTool.additional_static_methods.GetMaterialData_s]
+
+            body = "[](const TDF_Label& label) -> py::object { Handle(TDataStd_TreeNode) material_ref; if (!label.FindAttribute(XCAFDoc::MaterialRefGUID(), material_ref) || material_ref.IsNull()) return py::none(); const TDF_Label material_label = material_ref->Father()->Label(); Handle(XCAFDoc_Material) material; if (!material_label.FindAttribute(XCAFDoc_Material::GetID(), material) || material.IsNull()) return py::none(); const auto as_string = [](const Handle(TCollection_HAsciiString)& value) { return value.IsNull() ? std::string() : std::string(value->ToCString()); }; return py::make_tuple(as_string(material->GetName()), as_string(material->GetDescription()), material->GetDensity(), as_string(material->GetDensValType())); }"
+            help = "Return material name, description, density, and density unit for a shape label, or None when no material is assigned."
+            arguments = ["label"]
+
         [Modules.XCAFDoc.parsing_headers]
         "XCAFDoc_AssemblyTool.hxx" = "#include <TDF_Label.hxx>"
         "XCAFDoc_AssemblyIterator.hxx" = "#include <TDF_Label.hxx>"
