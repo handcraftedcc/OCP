@@ -84,9 +84,27 @@ elseif(NOT PLATFORM STREQUAL "Windows")
 # while unpacking optional SDK components and leaves the generator without any
 # C++ include directory.
 else()
-  if(MSVC)
+  if(CMAKE_HOST_WIN32)
     foreach(inc IN LISTS CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
       list(APPEND CXX_INCLUDES -i ${inc}/)
+    endforeach()
+    # The GitHub Windows runner invokes the generator from a micromamba shell,
+    # where CMake may select a non-MSVC compiler and leave MSVC false even
+    # though the native SDK is installed.  Feed libclang the installed headers
+    # directly instead of falling back to the cross-generation downloader.
+    file(GLOB native_msvc_includes
+         "C:/Program Files/Microsoft Visual Studio/*/*/VC/Tools/MSVC/*/include")
+    file(GLOB native_windows_sdks
+         "C:/Program Files (x86)/Windows Kits/10/Include/*")
+    foreach(inc IN LISTS native_msvc_includes)
+      list(APPEND CXX_INCLUDES -i ${inc}/)
+    endforeach()
+    foreach(sdk IN LISTS native_windows_sdks)
+      foreach(component ucrt shared um winrt)
+        if(IS_DIRECTORY "${sdk}/${component}")
+          list(APPEND CXX_INCLUDES -i "${sdk}/${component}/")
+        endif()
+      endforeach()
     endforeach()
   else()
     # download part of msvc 16 and winsdk for cross-generation
