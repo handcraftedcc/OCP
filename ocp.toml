@@ -2489,6 +2489,11 @@ using rapidjson::BasicOStreamWrapper;"""
 
     [Modules.XCAFDoc]
 
+        include_header_pre = """
+        #include <TDataStd_TreeNode.hxx>
+        #include <TCollection_HAsciiString.hxx>
+        """
+
         # `TDF_Label::FindAttribute` takes a generic `TDF_Attribute` handle.
         # The generated Python shim copies the result through `Restore`, which
         # loses the concrete XCAFDoc_Material handle and can leave Python with
